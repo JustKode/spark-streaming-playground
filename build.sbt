@@ -6,6 +6,7 @@ libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.4.1",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "joda-time" % "joda-time" % "2.9.9",
+  "org.apache.kafka" % "kafka-clients" % "3.4.0" % "provided",
   "org.scalatest" %% "scalatest" % "3.2.15" % "test"
 )
 
