@@ -1,5 +1,8 @@
 package kr.justkode.util
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.{DefaultScalaModule, ScalaObjectMapper}
+import com.fasterxml.jackson.module.scala.deser.ScalaObjectDeserializerModule
 import org.apache.commons.io.FileUtils
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.internal.Logging
@@ -12,6 +15,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.unsafe.types.UTF8String
 import org.scalatest.flatspec.AnyFlatSpec
+import org.apache.spark.sql.catalyst.ScalaReflection
 
 import java.io.File
 import java.util.TimeZone
@@ -22,6 +26,9 @@ trait SparkStreamingTestRunner extends AnyFlatSpec
   with Logging {
 
   Logger.getLogger("kr.justkode").setLevel(Level.INFO)
+
+  private val mapper = new ObjectMapper() with ScalaObjectMapper
+  mapper.registerModule(DefaultScalaModule)
 
   val spark = SparkUtil.getSparkSession()
 
@@ -58,5 +65,17 @@ trait SparkStreamingTestRunner extends AnyFlatSpec
     ).get
 
     timestampUsec / 1000
+  }
+
+  protected def caseClassObjectToJson[T](obj: T): String = {
+    mapper.writeValueAsString(obj)
+  }
+
+  protected def caseClassObjectToJson[T](objList: Seq[T]): String = {
+    objList.foldLeft("")((x, y) => x + mapper.writeValueAsString(y) + '\n').trim
+  }
+
+  protected def caseClassToStructType[T: scala.reflect.runtime.universe.TypeTag]: StructType = {
+    ScalaReflection.schemaFor[T].dataType.asInstanceOf[StructType]
   }
 }
