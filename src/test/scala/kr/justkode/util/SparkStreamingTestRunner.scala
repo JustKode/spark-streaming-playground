@@ -18,7 +18,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.apache.spark.sql.catalyst.ScalaReflection
 
 import java.io.File
-import java.util.TimeZone
+import java.sql.Timestamp
+import java.util.{Calendar, TimeZone}
 
 trait SparkStreamingTestRunner extends AnyFlatSpec
   with BeforeAndAfter
@@ -77,5 +78,9 @@ trait SparkStreamingTestRunner extends AnyFlatSpec
 
   protected def caseClassToStructType[T: scala.reflect.runtime.universe.TypeTag]: StructType = {
     ScalaReflection.schemaFor[T].dataType.asInstanceOf[StructType]
+  }
+
+  protected def calenderToTimestamp(calender: Calendar): Timestamp = {
+    new Timestamp(calender.getTimeInMillis / 1000)
   }
 }
