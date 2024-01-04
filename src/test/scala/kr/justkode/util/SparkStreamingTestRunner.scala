@@ -2,31 +2,23 @@ package kr.justkode.util
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.{DefaultScalaModule, ScalaObjectMapper}
-import com.fasterxml.jackson.module.scala.deser.ScalaObjectDeserializerModule
 import org.apache.commons.io.FileUtils
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.internal.Logging
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.catalyst.util.DateTimeUtils
+import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.execution.streaming.MemoryStream
 import org.apache.spark.sql.execution.streaming.sources.MemorySink
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.unsafe.types.UTF8String
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.apache.spark.sql.catalyst.ScalaReflection
 
 import java.io.File
 import java.sql.Timestamp
-import java.util.{Calendar, TimeZone}
+import java.util.Calendar
 
 trait SparkStreamingTestRunner extends AnyFlatSpec
   with BeforeAndAfter
-  with BeforeAndAfterAll
-  with Logging {
-
-  Logger.getLogger("kr.justkode").setLevel(Level.INFO)
+  with BeforeAndAfterAll {
 
   private val mapper = new ObjectMapper() with ScalaObjectMapper
   mapper.registerModule(DefaultScalaModule)
@@ -44,12 +36,10 @@ trait SparkStreamingTestRunner extends AnyFlatSpec
   val memorySink = new MemorySink
 
   override def beforeAll(): Unit = {
-    log.info("************Test Started************")
     FileUtils.deleteDirectory(new File(checkpointLocation))
   }
 
   override def afterAll(): Unit = {
-    log.info("************Test Ended************")
     FileUtils.deleteDirectory(new File(checkpointLocation))
   }
 
@@ -57,15 +47,6 @@ trait SparkStreamingTestRunner extends AnyFlatSpec
     logs.toDF()
       .select(from_json(col("value"), schema) as "data")
       .select("data.*")
-  }
-
-  protected def getTimestampMs(datetime: String): Long = {
-    val timestampUsec: Long = DateTimeUtils.stringToTimestamp(
-      UTF8String.fromString(datetime),
-      TimeZone.getTimeZone("KST").toZoneId
-    ).get
-
-    timestampUsec / 1000
   }
 
   protected def caseClassObjectToJson[T](obj: T): String = {
@@ -82,5 +63,9 @@ trait SparkStreamingTestRunner extends AnyFlatSpec
 
   protected def calenderToTimestamp(calender: Calendar): Timestamp = {
     new Timestamp(calender.getTimeInMillis / 1000)
+  }
+
+  protected def rowListToString(rows: Seq[Row]): String = {
+    rows.foldLeft("")((x, row) => x + row.toString() + '\n').trim
   }
 }
